@@ -13,7 +13,7 @@ namespace Globus.App.Business.Services
     public class NigerianStatesService
     {
         string _statesFileName;
-        Dictionary<string, List<string>> _states;
+        Dictionary<string, HashSet<string>> _states;
         private readonly ILogger<NigerianStatesService> _logger;
 
         public NigerianStatesService(
@@ -33,11 +33,11 @@ namespace Globus.App.Business.Services
 
                 if (File.Exists(filePath))
                 {
-                    _states = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText(filePath));
+                    _states = JsonConvert.DeserializeObject<Dictionary<string, HashSet<string>>>(File.ReadAllText(filePath));
                 }
                 else
                 {
-                    _states = new Dictionary<string, List<string>>();
+                    _states = new Dictionary<string, HashSet<string>>();
                 }
             }
             catch (Exception e)
@@ -60,6 +60,31 @@ namespace Globus.App.Business.Services
                         .ToList();
 
             return lgas;
+        }
+
+        public bool IsValidState(string state)
+        {
+            return _states.Any(k => k.Key.Equals(state,StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool IsValidLgaForState(string state,string lga)
+        {
+            var keyValuePair = _states
+                                    .Where(k => k.Key.Equals(state,StringComparison.OrdinalIgnoreCase))
+                                    .FirstOrDefault();
+            
+            if (keyValuePair.Value is null)
+            {
+                return false;
+            }
+
+            
+            if (!keyValuePair.Value.Any(v => v.Equals(lga, StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
