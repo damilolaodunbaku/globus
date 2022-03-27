@@ -11,6 +11,7 @@ namespace Globus.App.Data.Entities
     {
         [Key]
         public long Id { get; set; }
+        public Guid MessageReference { get; set; }
         [Required]
         [StringLength(100)]
         public string RecipientEmailAddress { get; set; }

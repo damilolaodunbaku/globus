@@ -2,6 +2,8 @@
 {
     public interface IUnitOfWork
     {
+        CustomerRepository Customers { get; }
+        OTPRepository OTPS { get; }
         void Complete();
     }
 }

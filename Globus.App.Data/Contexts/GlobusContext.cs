@@ -16,5 +16,17 @@ namespace Globus.App.Data.Contexts
         }
 
         public DbSet<OTP> OTPs { get; set; }
+        public DbSet<Customer> Customer { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.EmailAddress)
+                .IsUnique();
+
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.PhoneNumber)
+                .IsUnique();
+        }
     }
 }

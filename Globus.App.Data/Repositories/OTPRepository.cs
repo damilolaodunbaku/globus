@@ -18,5 +18,13 @@ namespace Globus.App.Data.Repositories
         }
 
         public GlobusContext GlobusContext { get { return dbContext as GlobusContext; } }
+
+        public bool IsMobileNumberValidated(string emailAddress,string mobileNumber)
+        {
+            return GlobusContext.OTPs
+                .Any(r => (r.RecipientEmailAddress.Equals(emailAddress)
+                          || r.RecipientMobileNumber.Equals(mobileNumber))
+                          && r.IsValidatedSuccessfully == true);
+        }
     }
 }

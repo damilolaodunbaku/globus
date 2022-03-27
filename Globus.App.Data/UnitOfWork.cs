@@ -17,9 +17,11 @@ namespace Globus.App.Data
             _logger = logger;
             _globusContext = globusContext;
             OTPS = new OTPRepository(globusContext);
+            Customers = new CustomerRepository(globusContext);
         }
 
-        public OTPRepository OTPS { get; set; }
+        public OTPRepository OTPS { get;}
+        public CustomerRepository Customers { get; }
         public void Complete()
         {
             try
