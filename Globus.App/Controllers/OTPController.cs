@@ -5,12 +5,16 @@ using Globus.App.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
+using System.Net.Mime;
 
 namespace Globus.App.Controllers
 {
-    [Route("api/[controller]")]
+    
     [ApiController]
+    [Route("api/[controller]")]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError,"Internal server error")]
     public class OTPController : ControllerBase
     {
         private readonly ILogger<OTPController> _logger;
@@ -33,33 +37,95 @@ namespace Globus.App.Controllers
         }
 
         [HttpPost]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [SwaggerOperation("Send an OTP to a customer","Sends a one-time password (OTP) to the provided email address and mobile number, for test purposes the generated OTP is 123456")]
+        [SwaggerResponse(StatusCodes.Status200OK,"Returns a message reference which is used when validating the sent OTP",Type = typeof(Guid))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Attempted to validate a non-existing record")]
+
         public ActionResult SendOTP([FromBody] OtpRequest request)
         {
-            if (_otpService.CheckCustomerValidationStatus(request.EmailAddress, request.MobileNumber))
+            try
             {
-                return Problem("Email address or Phone number has already been validated successfully",
-                               statusCode:StatusCodes.Status400BadRequest,
-                               title:"Bad request");
+                if (_otpService.CheckCustomerValidationStatus(request.EmailAddress, request.MobileNumber))
+                {
+                    return Problem("Email address or Phone number has already been validated successfully",
+                                   statusCode: StatusCodes.Status400BadRequest,
+                                   title: "Bad request");
+                }
+
+                string otpCode = _otpService.GenerateOtp();
+                string hashedOtpCode = _encryptionService.GetHash(otpCode);
+
+                _notificationService.SendOtpToCustomer(request.EmailAddress, request.MobileNumber, otpCode);
+
+                OTP oTP = new OTP()
+                {
+                    HashedOtp = hashedOtpCode,
+                    MessageReference = Guid.NewGuid(),
+                    RecipientEmailAddress = request.EmailAddress,
+                    RecipientMobileNumber = request.MobileNumber,
+                    RequestTime = DateTime.Now,
+                };
+
+                _unitOfWork.OTPS.Add(oTP);
+                _unitOfWork.Complete();
+
+                return new JsonResult(oTP.MessageReference);
             }
-
-            string otpCode = _otpService.GenerateOtp();
-            string hashedOtpCode = _encryptionService.GetHash(otpCode);
-
-            _notificationService.SendOtpToCustomer(request.EmailAddress, request.MobileNumber, otpCode);
-
-            OTP oTP = new OTP()
+            catch (Exception e)
             {
-                HashedOtp = hashedOtpCode,
-                MessageReference = Guid.NewGuid(),
-                RecipientEmailAddress = request.EmailAddress,
-                RecipientMobileNumber = request.MobileNumber,
-                RequestTime = DateTime.Now,
-            };
+                _logger.LogError(e, "An error occured");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
 
-            _unitOfWork.OTPS.Add(oTP);
-            _unitOfWork.Complete();
+        [HttpPost("validate")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [SwaggerOperation("Validate an OTP","Validate an OTP")]
+        [SwaggerResponse(StatusCodes.Status200OK)]
+        [SwaggerResponse(StatusCodes.Status404NotFound,"Attempted to validate a non-existing record")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Validation failed")]
+        public ActionResult ValidateOtp([FromBody] ValidateOtpRequest request)
+        {
+            try
+            {
+                OTP otp = _unitOfWork.OTPS.GetOtpByMessageReferece(request.MessageReference);
 
-            return new JsonResult(oTP.MessageReference);
+                if(otp == null)
+                {
+                    return Problem("No record found", title: "Not found", statusCode: StatusCodes.Status404NotFound);
+                }
+
+                if (otp.IsValidatedSuccessfully)
+                {
+                    return Problem("Record has been previously validated", title: "Bad request", statusCode: StatusCodes.Status400BadRequest);
+                }
+
+                // It's been more than 5 minutes, OTP has expired.
+                if((DateTime.Now - otp.RequestTime) > TimeSpan.FromMinutes(5))
+                {
+                    return Problem("OTP has expired, please generate a new one", title: "Bad request", statusCode: StatusCodes.Status400BadRequest);
+                }
+
+                string otpHash = _encryptionService.GetHash(request.OTP);
+
+                if (!otpHash.Equals(otp.HashedOtp))
+                {
+                    return Problem("Validation failed", title: "Bad request", statusCode: StatusCodes.Status400BadRequest);
+                }
+
+                otp.IsValidatedSuccessfully = true;
+                otp.ValidationTime = DateTime.Now;
+
+                _unitOfWork.Complete();
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "An error occured");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

@@ -26,5 +26,10 @@ namespace Globus.App.Data.Repositories
                           || r.RecipientMobileNumber.Equals(mobileNumber))
                           && r.IsValidatedSuccessfully == true);
         }
+
+        public OTP GetOtpByMessageReferece(Guid messageReference)
+        {
+            return GlobusContext.OTPs.Where(r => r.MessageReference == messageReference).FirstOrDefault();
+        }
     }
 }
