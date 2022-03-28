@@ -4,14 +4,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Net.Http;
+using System.Net.Mime;
 using System.Threading.Tasks;
 
 namespace Globus.App.Controllers
 {
-    [Route("api/[controller]")]
+    
     [ApiController]
+    [Route("api/[controller]")]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError)]
     public class GoldController : ControllerBase
     {
         private readonly ILogger<GoldController> _logger;
@@ -27,7 +31,11 @@ namespace Globus.App.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetPricesAsync()
+        [Produces(MediaTypeNames.Application.Json)]
+        [SwaggerOperation("Get price of Gold and Silver", "Get price of Gold and Silver")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Returns the price of Gold and Silver for today", Type = typeof(PricesResponse))]
+
+        public async Task<ActionResult<PricesResponse>> GetPricesAsync()
         {
             try
             {
