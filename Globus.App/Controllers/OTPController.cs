@@ -39,7 +39,7 @@ namespace Globus.App.Controllers
         [HttpPost]
         [Consumes(MediaTypeNames.Application.Json)]
         [SwaggerOperation("Send an OTP to a customer","Sends a one-time password (OTP) to the provided email address and mobile number, for test purposes the generated OTP is 123456")]
-        [SwaggerResponse(StatusCodes.Status200OK,"Returns a message reference which is used when validating the sent OTP",Type = typeof(Guid))]
+        [SwaggerResponse(StatusCodes.Status200OK,"Returns a message reference which is used when validating the sent OTP",Type = typeof(Guid), ContentTypes = new string[] { MediaTypeNames.Application.Json })]
         [SwaggerResponse(StatusCodes.Status404NotFound, "Attempted to validate a non-existing record")]
 
         public ActionResult SendOTP([FromBody] OtpRequest request)
@@ -82,7 +82,7 @@ namespace Globus.App.Controllers
         [HttpPost("validate")]
         [Consumes(MediaTypeNames.Application.Json)]
         [SwaggerOperation("Validate an OTP","Validate an OTP")]
-        [SwaggerResponse(StatusCodes.Status200OK)]
+        [SwaggerResponse(StatusCodes.Status200OK,"OTP Validated successfully")]
         [SwaggerResponse(StatusCodes.Status404NotFound,"Attempted to validate a non-existing record")]
         [SwaggerResponse(StatusCodes.Status400BadRequest, "Validation failed")]
         public ActionResult ValidateOtp([FromBody] ValidateOtpRequest request)
