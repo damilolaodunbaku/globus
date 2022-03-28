@@ -33,6 +33,21 @@ namespace Globus.App.Controllers
             _otpService = otpService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllCustomersAsync(int pageNumber = 0, int pageSize = 10)
+        {
+            try
+            {
+                var customers = _unitOfWork.Customers.PageCustomers(pageNumber, pageSize);
+                return new JsonResult(customers);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "An error occured");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
         [HttpPost]
         public ActionResult CreateCustomer([FromBody] CreateCustomerRequest request)
         {
