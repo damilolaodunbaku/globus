@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using System;
 
 namespace Globus.App
 {
@@ -52,6 +53,12 @@ namespace Globus.App
                     });
             });
 
+            services.AddHttpClient("goldApiClient", config =>
+            {
+                config.DefaultRequestHeaders.TryAddWithoutValidation("X-RapidAPI-Host", Configuration["goldUrlHost"]);
+                config.DefaultRequestHeaders.TryAddWithoutValidation("X-RapidAPI-Key", Configuration["goldApiKey"]);
+            });
+
             services.AddScoped<OTPRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<NigerianStatesService>();
@@ -80,13 +87,13 @@ namespace Globus.App
                 endpoints.MapControllers();
             });
 
-            using (var scope = app.ApplicationServices.CreateScope())
-            {
-                using (var context = scope.ServiceProvider.GetService<GlobusContext>())
-                {
-                    context.Database.Migrate();
-                }
-            }
+            //using (var scope = app.ApplicationServices.CreateScope())
+            //{
+            //    using (var context = scope.ServiceProvider.GetService<GlobusContext>())
+            //    {
+            //        context.Database.Migrate();
+            //    }
+            //}
         }
     }
 }
