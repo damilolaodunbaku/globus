@@ -1,11 +1,12 @@
 ﻿using Globus.App.Data.Contexts;
 using Globus.App.Data.Entities;
+using Globus.App.Data.Repositories.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Globus.App.Data.Repositories
 {
-    public class CustomerRepository : Repository<Customer>
+    public class CustomerRepository : Repository<Customer>, ICustomerRepository
     {
         public CustomerRepository(GlobusContext dbContext)
             : base(dbContext)
