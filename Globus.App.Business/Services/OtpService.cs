@@ -1,4 +1,5 @@
 ﻿using Globus.App.Data.Repositories.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -11,31 +12,31 @@ namespace Globus.App.Business.Services
     public class OtpService
     {
         private readonly ILogger<OtpService> _logger;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IServiceProvider _serviceProvider;
         private readonly Random _random;
         public OtpService(ILogger<OtpService> logger,
-            IUnitOfWork unitOfWork)
+            IServiceProvider serviceProvider)
         {
             _logger = logger;
-            _unitOfWork = unitOfWork;
+            _serviceProvider = serviceProvider;
             _random = new Random();
         }
 
         // Simplistic generation of an OTP.
         public string GenerateOtp()
         {
-            return _random.Next(999999).ToString();
+            //return _random.Next(999999).ToString();
+            return "123456";
         }
 
         public bool CheckCustomerValidationStatus(string emailAddress,string mobileNumber)
         {
-            return _unitOfWork.OTPS.IsMobileNumberValidated(emailAddress, mobileNumber);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                return unitOfWork.OTPS.IsMobileNumberValidated(emailAddress, mobileNumber);
+            }
         }
-        //public OtpValidationResult ValidateOtp()
-        //{
-
-        //}
-
     }
 
     public class OtpValidationResult

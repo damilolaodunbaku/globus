@@ -1,8 +1,10 @@
+using AutoMapper;
 using Globus.App.Business.Services;
 using Globus.App.Data;
 using Globus.App.Data.Contexts;
 using Globus.App.Data.Repositories;
 using Globus.App.Data.Repositories.Interfaces;
+using Globus.App.Profiles;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -59,12 +61,20 @@ namespace Globus.App
                 config.DefaultRequestHeaders.TryAddWithoutValidation("X-RapidAPI-Key", Configuration["goldApiKey"]);
             });
 
+            IMapper mapper = new MapperConfiguration(configure =>
+            {
+                configure.AddProfile(typeof(GlobusProfile));
+            }).CreateMapper();
+
+            services.AddSingleton(mapper);
+
             services.AddScoped<OTPRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSingleton<NigerianStatesService>();
             services.AddSingleton<NotificationService>();
             services.AddSingleton<EncryptionService>();
             services.AddSingleton<MnoCodeService>();
+            services.AddSingleton<OtpService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -87,13 +97,13 @@ namespace Globus.App
                 endpoints.MapControllers();
             });
 
-            //using (var scope = app.ApplicationServices.CreateScope())
-            //{
-            //    using (var context = scope.ServiceProvider.GetService<GlobusContext>())
-            //    {
-            //        context.Database.Migrate();
-            //    }
-            //}
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                using (var context = scope.ServiceProvider.GetService<GlobusContext>())
+                {
+                    context.Database.Migrate();
+                }
+            }
         }
     }
 }
