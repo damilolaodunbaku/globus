@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Globus.App.Integration.Tests.Contexts
 {
-    public class GlobusTestContext : DbContext
+    public class GlobusContext : DbContext
     {
-        public GlobusTestContext(DbContextOptions<GlobusTestContext> options): base(options)
+        public GlobusContext(DbContextOptions<GlobusContext> options): base(options)
         {
 
         }
