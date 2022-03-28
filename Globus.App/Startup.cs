@@ -1,16 +1,15 @@
+using Globus.App.Business.Services;
+using Globus.App.Data;
+using Globus.App.Data.Contexts;
+using Globus.App.Data.Repositories;
+using Globus.App.Data.Repositories.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Globus.App
 {
@@ -43,6 +42,22 @@ namespace Globus.App
                 });
                 setupAction.EnableAnnotations();
             });
+
+            services.AddDbContext<GlobusContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("Default"),
+                    sqlServerOptions =>
+                    {
+                        sqlServerOptions.MigrationsAssembly("Globus.App.Data");
+                    });
+            });
+
+            services.AddScoped<OTPRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddSingleton<NigerianStatesService>();
+            services.AddSingleton<NotificationService>();
+            services.AddSingleton<EncryptionService>();
+            services.AddSingleton<MnoCodeService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -64,6 +79,14 @@ namespace Globus.App
             {
                 endpoints.MapControllers();
             });
+
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                using (var context = scope.ServiceProvider.GetService<GlobusContext>())
+                {
+                    context.Database.Migrate();
+                }
+            }
         }
     }
 }
